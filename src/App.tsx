@@ -13,6 +13,7 @@ import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import LecturePlayer from "./pages/LecturePlayer";
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/course/:slug" element={<CourseDetails />} />
             <Route path="/course/:slug/lecture/:lectureId" element={<LecturePlayer />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
