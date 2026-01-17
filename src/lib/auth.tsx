@@ -21,20 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // 1. Auth State Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check admin role
-          const { data: roles } = await supabase
-            .from('user_roles')
+          // Admin Check - Fixed for 'profiles' table
+          const { data: profile } = await supabase
+            .from('profiles')
             .select('role')
-            .eq('user_id', session.user.id);
+            .eq('id', session.user.id) // Using 'id' instead of 'user_id'
+            .single();
           
-          setIsAdmin(roles?.some(r => r.role === 'admin') ?? false);
+          setIsAdmin(profile?.role === 'admin');
         } else {
           setIsAdmin(false);
         }
@@ -43,18 +44,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
+    // 2. Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         supabase
-          .from('user_roles')
+          .from('profiles')
           .select('role')
-          .eq('user_id', session.user.id)
-          .then(({ data: roles }) => {
-            setIsAdmin(roles?.some(r => r.role === 'admin') ?? false);
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setIsAdmin(profile?.role === 'admin');
             setLoading(false);
           });
       } else {
@@ -94,24 +96,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Find email by username
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('email') // Changed to fetch email instead of user_id for login
         .eq('username', emailOrUsername)
         .maybeSingle();
 
-      if (!profile) {
+      if (!profile || !profile.email) {
         return { error: new Error('User not found') };
       }
 
-      // Get user email from auth - we need to use a different approach
-      // Since we can't directly query auth.users, we'll try signing in with the username as email
+      // Login using the email found
       const { error } = await supabase.auth.signInWithPassword({
-        email: emailOrUsername,
+        email: profile.email,
         password,
       });
-      
-      if (error?.message.includes('Invalid login credentials')) {
-        return { error: new Error('Invalid username or password') };
-      }
       
       return { error };
     }
